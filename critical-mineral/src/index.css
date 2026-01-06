@@ -1,0 +1,345 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Critical Mineral Intelligence Platform - Design System
+   Theme: Dark Government Intelligence Dashboard
+   Inspired by: Bloomberg Terminal, NASA Mission Control
+*/
+
+@layer base {
+  :root {
+    /* Base Colors - Deep Navy Intelligence Theme */
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+
+    /* Card surfaces with glass effect */
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 96%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 96%;
+
+    /* Primary - Electric Cyan for data highlights */
+    --primary: 190 95% 50%;
+    --primary-foreground: 222 47% 6%;
+
+    /* Secondary - Slate Blue */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 96%;
+
+    /* Muted - Subdued elements */
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    /* Accent - Bright highlight */
+    --accent: 190 95% 40%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Critical Mineral Colors */
+    --copper: 25 85% 55%;
+    --copper-glow: 25 90% 65%;
+    --lithium: 200 100% 55%;
+    --lithium-glow: 200 100% 70%;
+    --graphite: 220 10% 45%;
+    --graphite-glow: 220 15% 60%;
+
+    /* Status Colors */
+    --success: 152 69% 45%;
+    --success-foreground: 152 69% 10%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    /* Trade Flow Colors */
+    --import: 0 72% 55%;
+    --export: 152 69% 45%;
+
+    /* Risk Levels */
+    --risk-high: 0 84% 60%;
+    --risk-medium: 38 92% 50%;
+    --risk-low: 152 69% 45%;
+
+    /* Borders & Input */
+    --border: 217 33% 20%;
+    --input: 217 33% 15%;
+    --ring: 190 95% 50%;
+
+    --radius: 0.75rem;
+
+    /* Sidebar */
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 210 40% 90%;
+    --sidebar-primary: 190 95% 50%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 217 33% 15%;
+    --sidebar-ring: 190 95% 50%;
+
+    /* Chart Colors */
+    --chart-1: 190 95% 50%;
+    --chart-2: 25 85% 55%;
+    --chart-3: 152 69% 45%;
+    --chart-4: 200 100% 55%;
+    --chart-5: 280 70% 60%;
+
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(222 47% 6%) 0%, hsl(222 47% 12%) 50%, hsl(217 33% 10%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(222 47% 10%) 0%, hsl(222 47% 7%) 100%);
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(190 95% 50% / 0.15) 0%, transparent 50%);
+    --gradient-copper: linear-gradient(135deg, hsl(25 85% 55%) 0%, hsl(35 90% 60%) 100%);
+    --gradient-lithium: linear-gradient(135deg, hsl(200 100% 55%) 0%, hsl(210 100% 65%) 100%);
+    --gradient-graphite: linear-gradient(135deg, hsl(220 10% 45%) 0%, hsl(220 15% 55%) 100%);
+
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(190 95% 50% / 0.2);
+    --shadow-card: 0 4px 24px hsl(0 0% 0% / 0.4);
+    --shadow-copper: 0 0 30px hsl(25 85% 55% / 0.3);
+    --shadow-lithium: 0 0 30px hsl(200 100% 55% / 0.3);
+    --shadow-graphite: 0 0 30px hsl(220 10% 45% / 0.3);
+  }
+
+  .dark {
+    /* Dark mode is default for this intelligence platform */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+    background: var(--gradient-hero);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Glass Card Effect */
+  .glass-card {
+    @apply relative rounded-xl border border-border/50 backdrop-blur-xl;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--card) / 0.8) 0%,
+      hsl(var(--card) / 0.6) 100%
+    );
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass-card::before {
+    content: '';
+    @apply absolute inset-0 rounded-xl pointer-events-none;
+    background: var(--gradient-glow);
+  }
+
+  /* Glowing Border Effect */
+  .glow-border {
+    @apply relative;
+  }
+
+  .glow-border::after {
+    content: '';
+    @apply absolute inset-0 rounded-xl pointer-events-none;
+    box-shadow: inset 0 0 0 1px hsl(var(--primary) / 0.3);
+  }
+
+  /* Mineral Badge Styles */
+  .mineral-copper {
+    @apply text-copper;
+    text-shadow: 0 0 10px hsl(var(--copper) / 0.5);
+  }
+
+  .mineral-lithium {
+    @apply text-lithium;
+    text-shadow: 0 0 10px hsl(var(--lithium) / 0.5);
+  }
+
+  .mineral-graphite {
+    @apply text-graphite;
+    text-shadow: 0 0 10px hsl(var(--graphite) / 0.5);
+  }
+
+  /* Stat Card Hover Effect */
+  .stat-card {
+    @apply glass-card p-6 transition-all duration-300;
+  }
+
+  .stat-card:hover {
+    @apply border-primary/50;
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+  }
+
+  /* Data Grid Lines */
+  .data-grid {
+    background-image: 
+      linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Pulse Animation for Live Data */
+  .pulse-live {
+    @apply relative;
+  }
+
+  .pulse-live::before {
+    content: '';
+    @apply absolute -top-1 -right-1 w-2 h-2 bg-success rounded-full;
+    animation: pulse-glow 2s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 0 0 0 hsl(var(--success) / 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px hsl(var(--success) / 0);
+    }
+  }
+
+  /* Navigation Link Active State */
+  .nav-link-active {
+    @apply text-primary relative;
+  }
+
+  .nav-link-active::after {
+    content: '';
+    @apply absolute -bottom-1 left-0 right-0 h-0.5 bg-primary rounded-full;
+    box-shadow: 0 0 10px hsl(var(--primary));
+  }
+
+  /* Chart Container */
+  .chart-container {
+    @apply glass-card p-4 overflow-hidden;
+  }
+
+  /* Risk Indicator */
+  .risk-high {
+    @apply text-risk-high;
+    text-shadow: 0 0 8px hsl(var(--risk-high) / 0.5);
+  }
+
+  .risk-medium {
+    @apply text-risk-medium;
+    text-shadow: 0 0 8px hsl(var(--risk-medium) / 0.5);
+  }
+
+  .risk-low {
+    @apply text-risk-low;
+    text-shadow: 0 0 8px hsl(var(--risk-low) / 0.5);
+  }
+
+  /* Scrollbar Styling */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-secondary/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/50 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/70;
+  }
+
+  /* Table Styling */
+  .data-table {
+    @apply w-full;
+  }
+
+  .data-table th {
+    @apply text-xs uppercase tracking-wider text-muted-foreground font-medium py-3 px-4 text-left border-b border-border/50;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .data-table td {
+    @apply py-3 px-4 border-b border-border/30 text-sm;
+  }
+
+  .data-table tr:hover td {
+    @apply bg-secondary/30;
+  }
+
+  /* Animated Background Pattern */
+  .hero-pattern {
+    background-image: 
+      radial-gradient(circle at 20% 80%, hsl(var(--copper) / 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 80% 20%, hsl(var(--lithium) / 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, hsl(var(--primary) / 0.03) 0%, transparent 50%);
+  }
+
+  /* Floating Label Effect */
+  .floating-label {
+    @apply absolute text-xs uppercase tracking-wider text-muted-foreground font-medium -top-2 left-3 bg-card px-2;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  /* Metric Value Large Display */
+  .metric-value {
+    font-family: 'Space Grotesk', sans-serif;
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  .metric-label {
+    @apply text-xs uppercase tracking-wider text-muted-foreground;
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Text Gradients */
+  .text-gradient-primary {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%);
+  }
+
+  .text-gradient-copper {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-copper);
+  }
+
+  .text-gradient-lithium {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-lithium);
+  }
+
+  /* Animation Utilities */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s ease-in-out infinite;
+  }
+
+  /* Blur Effect */
+  .blur-backdrop {
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+}
