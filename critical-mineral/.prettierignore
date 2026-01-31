@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env*
+!.env.example
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Package manager files
+package-lock.json
+yarn.lock
+
+# Public files that don't need formatting
+public/
+
+# Generated files
+*.generated.*
+*.min.js
+*.min.css
+
+# Test files
+test-results/
+playwright-report/
