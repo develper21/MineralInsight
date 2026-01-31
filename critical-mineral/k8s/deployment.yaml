@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mineralinsight-frontend
+  namespace: mineralinsight
+  labels:
+    app: mineralinsight-frontend
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mineralinsight-frontend
+  template:
+    metadata:
+      labels:
+        app: mineralinsight-frontend
+        version: v1
+    spec:
+      containers:
+      - name: frontend
+        image: mineralinsight/critical-mineral:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: VITE_API_BASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: API_BASE_URL
+        - name: VITE_APP_NAME
+          value: "MineralInsight"
+        - name: VITE_SENTRY_DSN
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SENTRY_DSN
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+      imagePullSecrets:
+      - name: docker-hub-secret
