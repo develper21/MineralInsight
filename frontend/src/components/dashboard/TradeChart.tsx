@@ -9,8 +9,9 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { useTradeFlow, type TradeFlowPoint } from "@/hooks/useDashboard";
 
-const tradeData = [
+const fallbackData = [
   { year: "2017-18", import: 3.2, export: 4.8, forecast: null },
   { year: "2018-19", import: 3.5, export: 4.6, forecast: null },
   { year: "2019-20", import: 3.8, export: 4.5, forecast: null },
@@ -46,6 +47,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export function TradeChart() {
+  const { data } = useTradeFlow();
+  const tradeData: TradeFlowPoint[] =
+    data && data.length > 0 ? data : fallbackData;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -78,65 +83,73 @@ export function TradeChart() {
         </div>
       </div>
 
-      <div className="h-[350px]">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.4 }}
+        className="h-80"
+      >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={tradeData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <AreaChart data={tradeData}>
             <defs>
               <linearGradient id="importGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(0, 72%, 55%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(0, 72%, 55%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(var(--import))" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="hsl(var(--import))" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="exportGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(152, 69%, 45%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(152, 69%, 45%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(var(--export))" stopOpacity={0.4} />
+                <stop offset="100%" stopColor="hsl(var(--export))" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="forecastGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(190, 95%, 50%)" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="hsl(190, 95%, 50%)" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(217, 33%, 20%)" />
-            <XAxis 
-              dataKey="year" 
-              stroke="hsl(215, 20%, 55%)" 
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis
+              dataKey="year"
+              stroke="hsl(var(--muted-foreground))"
               fontSize={12}
               tickLine={false}
+              axisLine={false}
             />
-            <YAxis 
-              stroke="hsl(215, 20%, 55%)" 
+            <YAxis
+              stroke="hsl(var(--muted-foreground))"
               fontSize={12}
               tickLine={false}
+              axisLine={false}
               tickFormatter={(value) => `$${value}B`}
             />
             <Tooltip content={<CustomTooltip />} />
+            <Legend />
             <Area
               type="monotone"
               dataKey="import"
-              stroke="hsl(0, 72%, 55%)"
-              strokeWidth={2}
+              stroke="hsl(var(--import))"
               fill="url(#importGradient)"
-              name="import"
+              strokeWidth={2}
+              connectNulls
             />
             <Area
               type="monotone"
               dataKey="export"
-              stroke="hsl(152, 69%, 45%)"
-              strokeWidth={2}
+              stroke="hsl(var(--export))"
               fill="url(#exportGradient)"
-              name="export"
+              strokeWidth={2}
+              connectNulls
             />
             <Area
               type="monotone"
               dataKey="forecast"
-              stroke="hsl(190, 95%, 50%)"
+              stroke="hsl(var(--primary))"
+              fill="url(#forecastGradient)"
               strokeWidth={2}
               strokeDasharray="5 5"
-              fill="url(#forecastGradient)"
-              name="forecast"
+              connectNulls
             />
           </AreaChart>
         </ResponsiveContainer>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

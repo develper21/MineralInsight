@@ -618,7 +618,7 @@ export class AnalyticsController {
   private calculateCorrelations(data: any[], minerals: string[]): any[] {
     // Simplified correlation calculation
     // In production, use a proper statistical library
-    const correlations = [];
+    const correlations: any[] = [];
     
     for (let i = 0; i < minerals.length; i++) {
       for (let j = i + 1; j < minerals.length; j++) {

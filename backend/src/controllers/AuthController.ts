@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from '@/config/database';
-import { cacheSet, cacheDel } from '@/config/redis';
+import { cacheSet, cacheGet, cacheDel } from '@/config/redis';
 import { CustomError } from '@/middleware/errorHandler';
 import { logger } from '@/utils/logger';
 import { sendEmail } from '@/utils/email';
@@ -298,8 +298,8 @@ export class AuthController {
       // Generate reset token
       const resetToken = jwt.sign(
         { userId: user.id, type: 'password-reset' },
-        process.env.JWT_SECRET!,
-        { expiresIn: '1h' }
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '1h' as any }
       );
 
       // Cache reset token

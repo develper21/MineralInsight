@@ -1,0 +1,71 @@
+# Render Blueprint — MineralInsight Backend
+# Deploy via Render Dashboard: New > Blueprint > point to this repo,
+# or CLI: render blueprint launch
+#
+# Provisioned services:
+#   - Web Service (this backend, Docker-free Node build)
+#   - Render PostgreSQL (DATABASE_URL injected automatically)
+#   - Render Key Value / Redis (REDIS_URL injected automatically)
+
+databases:
+  - name: mineralinsight-db
+    databaseName: mineralinsight
+    user: mineralinsight
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  # Optional Redis for caching — delete this block if you skip caching
+  - type: redis
+    name: mineralinsight-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: [] # allow all (Render internal network only)
+
+  - type: web
+    name: mineralinsight-api
+    runtime: node
+    plan: free
+    region: singapore # closest to India on Render free tier
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    autoDeploy: true # redeploys on every push to main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      # DATABASE_URL and REDIS_URL are auto-injected from the services above
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mineralinsight-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: mineralinsight-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: CORS_ORIGIN
+        sync: false # set to your Netlify URL, e.g. https://mineralinsight.netlify.app
+      - key: CORS_CREDENTIALS
+        value: "true"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "300"
+      - key: RUN_MIGRATIONS
+        value: "true" # runs knex migrations on boot
+      - key: RUN_SEEDS
+        value: "false" # set to true once to load seed data, then back to false
+      - key: ENABLE_SWAGGER
+        value: "false"
+      - key: LOG_LEVEL
+        value: info

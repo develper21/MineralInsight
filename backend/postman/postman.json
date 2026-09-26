@@ -1,0 +1,312 @@
+{
+  "info": {
+    "_postman_id": "b7f1c2d3-0001-4a5b-8c6d-mineralbackend1",
+    "name": "MineralInsight Backend API",
+    "description": "Complete Postman collection for the MineralInsight backend (Critical Mineral Intelligence Platform). Import into Postman and set the {{base_url}} and {{token}} collection variables. Run 'Auth > Login' first to auto-set {{token}} via the test script.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3001" },
+    { "key": "token", "value": "" },
+    { "key": "refresh_token", "value": "" },
+    { "key": "mineral_id", "value": "1" },
+    { "key": "state_id", "value": "1" },
+    { "key": "country", "value": "China" },
+    { "key": "mineral", "value": "Copper" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"] },
+            "description": "Server health probe with uptime and environment."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.tokens) {",
+                  "  pm.collectionVariables.set('token', body.data.tokens.accessToken || body.data.tokens.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', body.data.tokens.refreshToken || body.data.tokens.refresh_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.tokens) {",
+                  "  pm.collectionVariables.set('token', body.data.tokens.accessToken || body.data.tokens.access_token);",
+                  "  pm.collectionVariables.set('refresh_token', body.data.tokens.refreshToken || body.data.tokens.refresh_token);",
+                  "} else if (body.data && body.data.accessToken) {",
+                  "  pm.collectionVariables.set('token', body.data.accessToken);",
+                  "  pm.collectionVariables.set('refresh_token', body.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@mineralinsight.in\",\n  \"password\": \"Demo@1234\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] },
+            "description": "Seeded admin: admin@mineralinsight.in / Demo@1234. Saves access + refresh tokens automatically."
+          }
+        },
+        { "name": "Get Me", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] } } },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/refresh", "host": ["{{base_url}}"], "path": ["api", "auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": { "raw": "{{base_url}}/api/auth/logout", "host": ["{{base_url}}"], "path": ["api", "auth", "logout"] }
+          }
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Demo@1234\",\n  \"newPassword\": \"Demo@5678\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/password", "host": ["{{base_url}}"], "path": ["api", "auth", "password"] }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@mineralinsight.in\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/forgot-password", "host": ["{{base_url}}"], "path": ["api", "auth", "forgot-password"] }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"token\": \"<reset-token-from-email>\",\n  \"newPassword\": \"NewPass@123\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/reset-password", "host": ["{{base_url}}"], "path": ["api", "auth", "reset-password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Summary Stats",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/summary?fy=2023-24", "host": ["{{base_url}}"], "path": ["api", "dashboard", "summary"], "query": [{ "key": "fy", "value": "2023-24" }] }, "description": "Stat card data: imports, exports, deficit, mineral counts." } },
+        {
+          "name": "Focus Minerals",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/focus-minerals?limit=3", "host": ["{{base_url}}"], "path": ["api", "dashboard", "focus-minerals"], "query": [{ "key": "limit", "value": "3" }] } }
+        },
+        {
+          "name": "Trade Flow Series",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/trade-flow", "host": ["{{base_url}}"], "path": ["api", "dashboard", "trade-flow"] }, "description": "FY-wise import/export/forecast series in USD billions for TradeChart." }
+        },
+        {
+          "name": "Risk Gauges",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/risk-gauges?limit=3", "host": ["{{base_url}}"], "path": ["api", "dashboard", "risk-gauges"], "query": [{ "key": "limit", "value": "3" }] } }
+        },
+        {
+          "name": "India Map Data",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/india-map", "host": ["{{base_url}}"], "path": ["api", "dashboard", "india-map"] }, "description": "State-wise mineral resources and production for the India map." }
+        },
+        {
+          "name": "Top Partners",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/top-partners?limit=5", "host": ["{{base_url}}"], "path": ["api", "dashboard", "top-partners"], "query": [{ "key": "limit", "value": "5" }] } }
+        }
+      ]
+    },
+    {
+      "name": "Minerals",
+      "item": [
+        { "name": "List Minerals", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals?page=1&limit=20", "host": ["{{base_url}}"], "path": ["api", "minerals"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "search", "value": "", "disabled": true }, { "key": "category", "value": "", "disabled": true }] } } },
+        { "name": "Get Mineral", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}?includeStats=true", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}"], "query": [{ "key": "includeStats", "value": "true" }] } } },
+        { "name": "Mineral Stats", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/stats?period=1Y", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "stats"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Mineral Prices", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/prices?period=1Y&frequency=monthly", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "prices"], "query": [{ "key": "period", "value": "1Y" }, { "key": "frequency", "value": "monthly" }] } } },
+        { "name": "Mineral Trade", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/trade?period=1Y&type=both", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "trade"], "query": [{ "key": "period", "value": "1Y" }, { "key": "type", "value": "both" }] } } },
+        { "name": "Mineral Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/risk?period=1Y", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "risk"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Mineral Forecast", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/forecast?period=1Y&type=price", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "forecast"], "query": [{ "key": "period", "value": "1Y" }, { "key": "type", "value": "price" }] } } }
+      ]
+    },
+    {
+      "name": "Trade",
+      "item": [
+        { "name": "Trade Data", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade?page=1&limit=20&period=1Y&type=both", "host": ["{{base_url}}"], "path": ["api", "trade"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "period", "value": "1Y" }, { "key": "type", "value": "both" }, { "key": "mineral", "value": "", "disabled": true }, { "key": "country", "value": "", "disabled": true }] } } },
+        { "name": "Trade Summary", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/summary?period=1Y", "host": ["{{base_url}}"], "path": ["api", "trade", "summary"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Top Countries", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/top-countries?limit=10&period=1Y&type=import", "host": ["{{base_url}}"], "path": ["api", "trade", "top-countries"], "query": [{ "key": "limit", "value": "10" }, { "key": "period", "value": "1Y" }, { "key": "type", "value": "import" }] } } },
+        { "name": "Trade Trends", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/trends?period=1Y&frequency=monthly&type=both", "host": ["{{base_url}}"], "path": ["api", "trade", "trends"], "query": [{ "key": "period", "value": "1Y" }, { "key": "frequency", "value": "monthly" }, { "key": "type", "value": "both" }] } } },
+        { "name": "Trade by Country", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/country/{{country}}?period=1Y", "host": ["{{base_url}}"], "path": ["api", "trade", "country", "{{country}}"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Trade by Mineral", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/mineral/{{mineral}}?period=1Y", "host": ["{{base_url}}"], "path": ["api", "trade", "mineral", "{{mineral}}"], "query": [{ "key": "period", "value": "1Y" }] } } }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        { "name": "Dashboard Analytics", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/dashboard?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "dashboard"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Market Overview", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/market-overview?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "market-overview"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Performance Metrics", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/performance?period=1Y&metric=value", "host": ["{{base_url}}"], "path": ["api", "analytics", "performance"], "query": [{ "key": "period", "value": "1Y" }, { "key": "metric", "value": "value" }] } } },
+        { "name": "Correlation Analysis", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/correlation?minerals=Copper,Lithium&period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "correlation"], "query": [{ "key": "minerals", "value": "Copper,Lithium" }, { "key": "period", "value": "1Y" }] } } },
+        { "name": "Volatility Analysis", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/volatility?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "volatility"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Supply-Demand Analysis", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/supply-demand?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "supply-demand"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Market Sentiment", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/sentiment?period=3M", "host": ["{{base_url}}"], "path": ["api", "analytics", "sentiment"], "query": [{ "key": "period", "value": "3M" }] } } },
+        { "name": "Price Predictions", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/predictions?period=3M&model=arima", "host": ["{{base_url}}"], "path": ["api", "analytics", "predictions"], "query": [{ "key": "period", "value": "3M" }, { "key": "model", "value": "arima" }] } } }
+      ]
+    },
+    {
+      "name": "Risk",
+      "item": [
+        { "name": "Risk Index", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/index?period=1Y", "host": ["{{base_url}}"], "path": ["api", "risk", "index"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Mineral Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/mineral/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "risk", "mineral", "{{mineral}}"] } } },
+        { "name": "Country Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/country/{{country}}", "host": ["{{base_url}}"], "path": ["api", "risk", "country", "{{country}}"] } } },
+        { "name": "Supply Chain Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/supply-chain", "host": ["{{base_url}}"], "path": ["api", "risk", "supply-chain"] } } },
+        { "name": "Geopolitical Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/geopolitical", "host": ["{{base_url}}"], "path": ["api", "risk", "geopolitical"] } } },
+        { "name": "Risk Scenarios", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/scenarios", "host": ["{{base_url}}"], "path": ["api", "risk", "scenarios"] } } },
+        { "name": "Mitigation Strategies", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/mitigation", "host": ["{{base_url}}"], "path": ["api", "risk", "mitigation"] } } }
+      ]
+    },
+    {
+      "name": "Forecast",
+      "item": [
+        { "name": "Price Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/prices?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "prices"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Demand Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/demand?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "demand"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Supply Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/supply?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "supply"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Trade Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/trade?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "trade"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Forecast Scenarios", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/scenarios", "host": ["{{base_url}}"], "path": ["api", "forecast", "scenarios"] } } },
+        { "name": "Forecast Accuracy", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/accuracy", "host": ["{{base_url}}"], "path": ["api", "forecast", "accuracy"] } } }
+      ]
+    },
+    {
+      "name": "States",
+      "item": [
+        { "name": "List States", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states?page=1&limit=30", "host": ["{{base_url}}"], "path": ["api", "states"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "30" }] } } },
+        { "name": "Get State", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}"] } } },
+        { "name": "State Minerals", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}/minerals", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}", "minerals"] } } },
+        { "name": "State Production", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}/production?period=1Y", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}", "production"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "State Reserves", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}/reserves", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}", "reserves"] } } },
+        { "name": "State Companies", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}/companies", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}", "companies"] } } },
+        { "name": "State Projects", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}/projects", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}", "projects"] } } }
+      ]
+    },
+    {
+      "name": "Geospatial",
+      "item": [
+        { "name": "Mines", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/mines", "host": ["{{base_url}}"], "path": ["api", "geospatial", "mines"] } } },
+        { "name": "Boundaries", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/boundaries", "host": ["{{base_url}}"], "path": ["api", "geospatial", "boundaries"] } } },
+        { "name": "Heatmap", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/heatmap/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "geospatial", "heatmap", "{{mineral}}"] } } },
+        { "name": "Trade Flows", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/trade-flows/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "geospatial", "trade-flows", "{{mineral}}"] } } },
+        { "name": "Risk Zones", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/risk-zones", "host": ["{{base_url}}"], "path": ["api", "geospatial", "risk-zones"] } } },
+        { "name": "Nearby Mines", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/nearby-mines?lat=23.61&lng=85.28&radius=300", "host": ["{{base_url}}"], "path": ["api", "geospatial", "nearby-mines"], "query": [{ "key": "lat", "value": "23.61" }, { "key": "lng", "value": "85.28" }, { "key": "radius", "value": "300" }] } } },
+        {
+          "name": "Distance Calculation",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"origin\": { \"lat\": 23.61, \"lng\": 85.28 },\n  \"destination\": { \"lat\": 20.95, \"lng\": 85.09 }\n}" },
+            "url": { "raw": "{{base_url}}/api/geospatial/distance", "host": ["{{base_url}}"], "path": ["api", "geospatial", "distance"] }
+          }
+        },
+        { "name": "Clusters", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/clusters/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "geospatial", "clusters", "{{mineral}}"] } } },
+        { "name": "Statistics", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/statistics", "host": ["{{base_url}}"], "path": ["api", "geospatial", "statistics"] } } },
+        { "name": "Regional Analysis", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/regional-analysis", "host": ["{{base_url}}"], "path": ["api", "geospatial", "regional-analysis"] } } },
+        { "name": "Supply Chain", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/supply-chain/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "geospatial", "supply-chain", "{{mineral}}"] } } },
+        { "name": "Infrastructure", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/infrastructure", "host": ["{{base_url}}"], "path": ["api", "geospatial", "infrastructure"] } } },
+        { "name": "Environmental Impact", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/environmental-impact/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "geospatial", "environmental-impact", "{{mineral}}"] } } }
+      ]
+    },
+    {
+      "name": "External APIs",
+      "item": [
+        { "name": "DGCI Prices", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/dgci/prices", "host": ["{{base_url}}"], "path": ["api", "external", "dgci", "prices"] } } },
+        { "name": "DGCI Trade", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/dgci/trade", "host": ["{{base_url}}"], "path": ["api", "external", "dgci", "trade"] } } },
+        { "name": "DGCI Production", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/dgci/production", "host": ["{{base_url}}"], "path": ["api", "external", "dgci", "production"] } } },
+        { "name": "DGCI Intelligence", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/dgci/intelligence", "host": ["{{base_url}}"], "path": ["api", "external", "dgci", "intelligence"] } } },
+        { "name": "DGCI Policy Updates", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/dgci/policy-updates", "host": ["{{base_url}}"], "path": ["api", "external", "dgci", "policy-updates"] } } },
+        { "name": "Commerce Trade", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/trade", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "trade"] } } },
+        { "name": "Commerce by Country", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/country/{{country}}", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "country", "{{country}}"] } } },
+        { "name": "Commerce by Commodity", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/commodity/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "commodity", "{{mineral}}"] } } },
+        { "name": "Commerce Statistics", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/statistics", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "statistics"] } } },
+        { "name": "Commerce Top Partners", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/top-partners", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "top-partners"] } } },
+        { "name": "Commerce Trends", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/trends", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "trends"] } } },
+        { "name": "Commerce Policy Updates", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/policy-updates", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "policy-updates"] } } },
+        { "name": "Commerce Tariffs", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/tariffs/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "tariffs", "{{mineral}}"] } } },
+        { "name": "Commerce Balance", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/commerce/balance/{{country}}", "host": ["{{base_url}}"], "path": ["api", "external", "commerce", "balance", "{{country}}"] } } },
+        { "name": "TEXMiN Mining", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/mining", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "mining"] } } },
+        { "name": "TEXMiN State Data", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/states/Odisha", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "states", "Odisha"] } } },
+        { "name": "TEXMiN Reserves", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/minerals/{{mineral}}/reserves", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "minerals", "{{mineral}}", "reserves"] } } },
+        { "name": "TEXMiN Production", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/minerals/{{mineral}}/production", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "minerals", "{{mineral}}", "production"] } } },
+        { "name": "TEXMiN Companies", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/companies", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "companies"] } } },
+        { "name": "TEXMiN Mine Locations", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/mines/locations", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "mines", "locations"] } } },
+        { "name": "TEXMiN Projects", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/projects", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "projects"] } } },
+        { "name": "TEXMiN Environmental", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/environmental/{{mineral}}", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "environmental", "{{mineral}}"] } } },
+        { "name": "TEXMiN Policy", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/policy", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "policy"] } } },
+        { "name": "TEXMiN Intelligence", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/texmin/intelligence", "host": ["{{base_url}}"], "path": ["api", "external", "texmin", "intelligence"] } } },
+        { "name": "ETL Jobs", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/etl/jobs", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "jobs"] } } },
+        { "name": "ETL Job Detail", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/etl/jobs/daily-sync", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "jobs", "daily-sync"] } } },
+        { "name": "Run ETL Job", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/external/etl/jobs/daily-sync/run", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "jobs", "daily-sync", "run"] } } },
+        { "name": "Enable ETL Job", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/external/etl/jobs/daily-sync/enable", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "jobs", "daily-sync", "enable"] } } },
+        { "name": "Disable ETL Job", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/external/etl/jobs/daily-sync/disable", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "jobs", "daily-sync", "disable"] } } },
+        { "name": "Comprehensive Sync", "request": { "method": "POST", "url": { "raw": "{{base_url}}/api/external/etl/comprehensive-sync", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "comprehensive-sync"] } } },
+        { "name": "Data Quality", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/etl/data-quality", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "data-quality"] } } },
+        { "name": "Combined Market Overview", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/combined/market-overview", "host": ["{{base_url}}"], "path": ["api", "external", "combined", "market-overview"] } } },
+        { "name": "Combined Trade Analysis", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/combined/trade-analysis", "host": ["{{base_url}}"], "path": ["api", "external", "combined", "trade-analysis"] } } },
+        { "name": "Combined Production Analysis", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/combined/production-analysis", "host": ["{{base_url}}"], "path": ["api", "external", "combined", "production-analysis"] } } }
+      ]
+    }
+  ]
+}

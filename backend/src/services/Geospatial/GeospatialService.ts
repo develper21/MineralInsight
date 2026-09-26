@@ -31,7 +31,7 @@ export class GeospatialService {
   async getMineLocations(mineral?: string, state?: string): Promise<GeoJSONResponse> {
     try {
       const cacheKey = `geospatial:mines:${mineral || 'all'}:${state || 'all'}`;
-      const cached = await cacheGet(cacheKey);
+      const cached = await cacheGet<any>(cacheKey);
       
       if (cached) {
         logger.info(`Geospatial API cache hit for mine locations`);
@@ -109,7 +109,7 @@ export class GeospatialService {
   async getStateBoundaries(state?: string): Promise<GeoJSONResponse> {
     try {
       const cacheKey = `geospatial:boundaries:${state || 'all'}`;
-      const cached = await cacheGet(cacheKey);
+      const cached = await cacheGet<any>(cacheKey);
       
       if (cached) {
         logger.info(`Geospatial API cache hit for state boundaries`);
@@ -291,10 +291,10 @@ export class GeospatialService {
       }
 
       // Get trade data between countries
-      const tradeData = await db('trade_data')
+      const tradeData: any[] = await db('trade_data')
         .join('minerals', 'trade_data.mineral_id', 'minerals.id')
         .join('countries as exporter', 'trade_data.country_id', 'exporter.id')
-        .leftJoin('countries as importer', db.raw('JSON_EXTRACT(trade_data.metadata, "$.destination_country")'), 'importer.id')
+        .leftJoin('countries as importer', db.raw('JSON_EXTRACT(trade_data.metadata, "$.destination_country")') as any, 'importer.id')
         .where('minerals.name', commodity)
         .whereBetween('trade_data.trade_date', [startDate, now])
         .where('trade_data.trade_type', 'export')
@@ -392,7 +392,7 @@ export class GeospatialService {
         if (lat && lon) {
           // Create a circular risk zone around the location
           const radius = (row.risk_score / 100) * 5; // Scale radius by risk score
-          const points = [];
+          const points: any[] = [];
           const sides = 32; // Number of points in the circle
 
           for (let i = 0; i <= sides; i++) {
@@ -455,7 +455,7 @@ export class GeospatialService {
   async findNearbyMines(latitude: number, longitude: number, radius: number = 50, mineral?: string): Promise<any[]> {
     try {
       const cacheKey = `geospatial:nearby:${latitude}:${longitude}:${radius}:${mineral || 'all'}`;
-      const cached = await cacheGet(cacheKey);
+      const cached = await cacheGet<any>(cacheKey);
       
       if (cached) {
         logger.info(`Geospatial API cache hit for nearby mines`);
@@ -482,7 +482,7 @@ export class GeospatialService {
       }
 
       const mines = await query;
-      const nearbyMines = [];
+      const nearbyMines: any[] = [];
 
       for (const mine of mines) {
         if (mine.latitude && mine.longitude) {
@@ -559,7 +559,7 @@ export class GeospatialService {
   }
 
   private performSimpleClustering(locations: any[], radius: number): any[] {
-    const clusters = [];
+    const clusters: any[] = [];
     const visited = new Set();
 
     for (const location of locations) {

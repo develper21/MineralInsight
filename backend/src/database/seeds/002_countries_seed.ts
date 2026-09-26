@@ -125,6 +125,66 @@ export async function seed(knex: Knex): Promise<void> {
       trade_partners: JSON.stringify(['China', 'European Union', 'Turkey', 'South Korea']),
       mineral_resources: JSON.stringify(['Nickel', 'Palladium', 'Platinum', 'Rare Earth Elements']),
       is_active: true
+    },
+    {
+      name: 'Indonesia',
+      code_2: 'ID',
+      code_3: 'IDN',
+      region: 'Asia',
+      subregion: 'South-Eastern Asia',
+      latitude: -0.7893,
+      longitude: 113.9213,
+      trade_partners: JSON.stringify(['China', 'India', 'Japan', 'South Korea']),
+      mineral_resources: JSON.stringify(['Nickel', 'Copper', 'Bauxite', 'Tin']),
+      is_active: true
+    },
+    {
+      name: 'Japan',
+      code_2: 'JP',
+      code_3: 'JPN',
+      region: 'Asia',
+      subregion: 'Eastern Asia',
+      latitude: 36.2048,
+      longitude: 138.2529,
+      trade_partners: JSON.stringify(['China', 'United States', 'Australia', 'South Korea']),
+      mineral_resources: JSON.stringify([]),
+      is_active: true
+    },
+    {
+      name: 'South Korea',
+      code_2: 'KR',
+      code_3: 'KOR',
+      region: 'Asia',
+      subregion: 'Eastern Asia',
+      latitude: 35.9078,
+      longitude: 127.7669,
+      trade_partners: JSON.stringify(['China', 'United States', 'Japan', 'Vietnam']),
+      mineral_resources: JSON.stringify(['Tungsten']),
+      is_active: true
+    },
+    {
+      name: 'United Arab Emirates',
+      code_2: 'AE',
+      code_3: 'ARE',
+      region: 'Asia',
+      subregion: 'Western Asia',
+      latitude: 23.4241,
+      longitude: 53.8478,
+      trade_partners: JSON.stringify(['China', 'India', 'Japan', 'Saudi Arabia']),
+      mineral_resources: JSON.stringify(['Chromium', 'Gypsum']),
+      is_active: true
+    },
+    {
+      name: 'Belgium',
+      code_2: 'BE',
+      code_3: 'BEL',
+      region: 'Europe',
+      subregion: 'Western Europe',
+      latitude: 50.5039,
+      longitude: 4.4699,
+      trade_partners: JSON.stringify(['Germany', 'France', 'Netherlands', 'United Kingdom']),
+      mineral_resources: JSON.stringify([]),
+      is_active: true
     }
   ]);
 }

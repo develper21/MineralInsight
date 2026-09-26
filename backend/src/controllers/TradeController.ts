@@ -29,7 +29,7 @@ export class TradeController {
         return;
       }
 
-      let query = db('trade_data')
+      let query: any = db('trade_data')
         .join('minerals', 'trade_data.mineral_id', 'minerals.id')
         .join('countries', 'trade_data.country_id', 'countries.id')
         .select(

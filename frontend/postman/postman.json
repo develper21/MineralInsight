@@ -1,0 +1,131 @@
+{
+  "info": {
+    "_postman_id": "e9a3d4c5-0002-4b6c-9d7e-mineralfrontend1",
+    "name": "MineralInsight Frontend API Calls",
+    "description": "Postman collection covering every backend endpoint the MineralInsight frontend consumes. Use this to verify the exact API calls the UI makes (mirrors src/lib/api.ts + react-query hooks). Set {{base_url}} to your deployed or local backend and run 'Auth > Login' first to capture the token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:3001" },
+    { "key": "token", "value": "" },
+    { "key": "mineral_id", "value": "1" },
+    { "key": "fy", "value": "2023-24" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth (Frontend)",
+      "item": [
+        {
+          "name": "Login (saves token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "const data = body.data || body;",
+                  "if (data.accessToken || data.access_token) {",
+                  "  pm.collectionVariables.set('token', data.accessToken || data.access_token);",
+                  "} else if (data.tokens) {",
+                  "  pm.collectionVariables.set('token', data.tokens.accessToken || data.tokens.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@mineralinsight.in\",\n  \"password\": \"Demo@1234\"\n}" },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        { "name": "Current User", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] } } }
+      ]
+    },
+    {
+      "name": "Dashboard Widgets (Index page)",
+      "item": [
+        { "name": "Stat Cards — Summary", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/summary?fy={{fy}}", "host": ["{{base_url}}"], "path": ["api", "dashboard", "summary"], "query": [{ "key": "fy", "value": "{{fy}}" }] }, "description": "Feeds: Total Import Value, Critical Minerals, Trade Deficit, High Risk Minerals stat cards." } },
+        { "name": "Focus Mineral Cards", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/focus-minerals?limit=3", "host": ["{{base_url}}"], "path": ["api", "dashboard", "focus-minerals"], "query": [{ "key": "limit", "value": "3" }] }, "description": "Feeds: Copper/Lithium/Graphite mineral cards." } },
+        { "name": "Trade Chart Series", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/trade-flow", "host": ["{{base_url}}"], "path": ["api", "dashboard", "trade-flow"] }, "description": "Feeds: Trade Flow Analysis area chart." } },
+        { "name": "Risk Gauge Widgets", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/risk-gauges?limit=3", "host": ["{{base_url}}"], "path": ["api", "dashboard", "risk-gauges"], "query": [{ "key": "limit", "value": "3" }] }, "description": "Feeds: Risk Assessment Index gauges." } },
+        { "name": "India Map Data", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/india-map", "host": ["{{base_url}}"], "path": ["api", "dashboard", "india-map"] }, "description": "Feeds: IndiaMapSection state data." } },
+        { "name": "Top Trading Partners", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/top-partners?limit=5", "host": ["{{base_url}}"], "path": ["api", "dashboard", "top-partners"], "query": [{ "key": "limit", "value": "5" }] }, "description": "Feeds: CountryTable." } }
+      ]
+    },
+    {
+      "name": "EXIM Analysis page",
+      "item": [
+        { "name": "Trade Data", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade?page=1&limit=20&period=1Y&type=both", "host": ["{{base_url}}"], "path": ["api", "trade"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }, { "key": "period", "value": "1Y" }, { "key": "type", "value": "both" }] } } },
+        { "name": "Trade Summary", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/summary?period=1Y", "host": ["{{base_url}}"], "path": ["api", "trade", "summary"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Top Countries", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/top-countries?limit=10&period=1Y", "host": ["{{base_url}}"], "path": ["api", "trade", "top-countries"], "query": [{ "key": "limit", "value": "10" }, { "key": "period", "value": "1Y" }] } } },
+        { "name": "Trade Trends", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/trade/trends?period=1Y&frequency=monthly", "host": ["{{base_url}}"], "path": ["api", "trade", "trends"], "query": [{ "key": "period", "value": "1Y" }, { "key": "frequency", "value": "monthly" }] } } },
+        { "name": "Commerce Combined Trade", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/combined/trade-analysis", "host": ["{{base_url}}"], "path": ["api", "external", "combined", "trade-analysis"] } } }
+      ]
+    },
+    {
+      "name": "Forecast page",
+      "item": [
+        { "name": "Price Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/prices?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "prices"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Demand Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/demand?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "demand"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Supply Forecasts", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/supply?period=1Y", "host": ["{{base_url}}"], "path": ["api", "forecast", "supply"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Mineral Forecast", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/forecast?period=1Y&type=price", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "forecast"], "query": [{ "key": "period", "value": "1Y" }, { "key": "type", "value": "price" }] } } }
+      ]
+    },
+    {
+      "name": "Risk Index page",
+      "item": [
+        { "name": "Risk Index", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/index?period=1Y", "host": ["{{base_url}}"], "path": ["api", "risk", "index"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Supply Chain Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/supply-chain", "host": ["{{base_url}}"], "path": ["api", "risk", "supply-chain"] } } },
+        { "name": "Geopolitical Risk", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/geopolitical", "host": ["{{base_url}}"], "path": ["api", "risk", "geopolitical"] } } },
+        { "name": "Scenarios", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/scenarios", "host": ["{{base_url}}"], "path": ["api", "risk", "scenarios"] } } },
+        { "name": "Mitigation", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/mitigation", "host": ["{{base_url}}"], "path": ["api", "risk", "mitigation"] } } }
+      ]
+    },
+    {
+      "name": "Trend Analysis page",
+      "item": [
+        { "name": "Market Overview", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/market-overview?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "market-overview"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Performance Metrics", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/performance?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "performance"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Volatility", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/volatility?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "volatility"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Correlation", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/correlation?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "correlation"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Price History", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/minerals/{{mineral_id}}/prices?period=1Y&frequency=monthly", "host": ["{{base_url}}"], "path": ["api", "minerals", "{{mineral_id}}", "prices"], "query": [{ "key": "period", "value": "1Y" }, { "key": "frequency", "value": "monthly" }] } } }
+      ]
+    },
+    {
+      "name": "State Mineral Map page",
+      "item": [
+        { "name": "States List", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states?page=1&limit=40", "host": ["{{base_url}}"], "path": ["api", "states"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "40" }] } } },
+        { "name": "State Detail", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}"] } } },
+        { "name": "State Production", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/states/{{state_id}}/production", "host": ["{{base_url}}"], "path": ["api", "states", "{{state_id}}", "production"] } } },
+        { "name": "India Map Aggregate", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/dashboard/india-map", "host": ["{{base_url}}"], "path": ["api", "dashboard", "india-map"] } } },
+        { "name": "Geo Heatmap", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/geospatial/heatmap/Copper", "host": ["{{base_url}}"], "path": ["api", "geospatial", "heatmap", "Copper"] } } }
+      ]
+    },
+    {
+      "name": "Scenario & ANOVA pages",
+      "item": [
+        { "name": "Forecast Scenarios", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/forecast/scenarios", "host": ["{{base_url}}"], "path": ["api", "forecast", "scenarios"] } } },
+        { "name": "Risk Scenarios", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/risk/scenarios", "host": ["{{base_url}}"], "path": ["api", "risk", "scenarios"] } } },
+        { "name": "Supply-Demand (ANOVA)", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/supply-demand?period=1Y", "host": ["{{base_url}}"], "path": ["api", "analytics", "supply-demand"], "query": [{ "key": "period", "value": "1Y" }] } } },
+        { "name": "Sentiment", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/analytics/sentiment?period=3M", "host": ["{{base_url}}"], "path": ["api", "analytics", "sentiment"], "query": [{ "key": "period", "value": "3M" }] } } }
+      ]
+    },
+    {
+      "name": "Data Transparency page",
+      "item": [
+        { "name": "ETL Data Quality", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/etl/data-quality", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "data-quality"] } } },
+        { "name": "ETL Jobs", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/etl/jobs", "host": ["{{base_url}}"], "path": ["api", "external", "etl", "jobs"] } } },
+        { "name": "Combined Market Overview", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/combined/market-overview", "host": ["{{base_url}}"], "path": ["api", "external", "combined", "market-overview"] } } },
+        { "name": "DGCI Intelligence", "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/external/dgci/intelligence", "host": ["{{base_url}}"], "path": ["api", "external", "dgci", "intelligence"] } } }
+      ]
+    }
+  ]
+}

@@ -15,8 +15,28 @@ import { TradeChart } from "@/components/dashboard/TradeChart";
 import { CountryTable } from "@/components/dashboard/CountryTable";
 import { RiskGauge } from "@/components/dashboard/RiskGauge";
 import { IndiaMapSection } from "@/components/dashboard/IndiaMapSection";
+import {
+  useDashboardSummary,
+  useFocusMinerals,
+  useRiskGauges,
+  formatBillions,
+} from "@/hooks/useDashboard";
+
+const RISK_LEVELS = ["low", "medium", "high"] as const;
+type RiskLevel = (typeof RISK_LEVELS)[number];
+const CARD_COLORS = ["copper", "lithium", "graphite"] as const;
+type CardColor = (typeof CARD_COLORS)[number];
+
+const asRisk = (level: string | undefined): RiskLevel =>
+  RISK_LEVELS.includes((level || "") as RiskLevel) ? (level as RiskLevel) : "medium";
+
+const asColor = (i: number): CardColor => CARD_COLORS[i % CARD_COLORS.length];
 
 const Index = () => {
+  const { data: summary } = useDashboardSummary();
+  const { data: focusMinerals } = useFocusMinerals(3);
+  const { data: riskGauges } = useRiskGauges(3);
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -40,39 +60,37 @@ const Index = () => {
             </p>
           </motion.div>
 
-          {/* Stats Grid */}
+          {/* Stats Grid — live from /api/dashboard/summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <StatCard
               title="Total Import Value"
-              value="$8.01B"
-              change={37.8}
+              value={summary ? formatBillions(summary.totalImportValueUSD) : "…"}
+              change={summary?.importChangePercent ?? undefined}
               changeLabel="vs last year"
               icon={DollarSign}
               delay={0}
             />
             <StatCard
               title="Critical Minerals"
-              value="30"
+              value={summary ? String(summary.activeMinerals) : "…"}
               icon={Package}
               delay={0.1}
             />
             <StatCard
               title="Trade Deficit"
-              value="$4.02B"
-              change={-65.2}
-              changeLabel="widening"
+              value={summary ? formatBillions(Math.abs(summary.tradeDeficitUSD)) : "…"}
               icon={ArrowUpDown}
               delay={0.2}
             />
             <StatCard
               title="High Risk Minerals"
-              value="12"
+              value={summary ? String(summary.highRiskMinerals) : "…"}
               icon={AlertTriangle}
               delay={0.3}
             />
           </div>
 
-          {/* Mineral Cards */}
+          {/* Mineral Cards — live from /api/dashboard/focus-minerals */}
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
@@ -83,39 +101,20 @@ const Index = () => {
               Focus Minerals Analysis
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <MineralCard
-                name="Copper"
-                symbol="Cu"
-                importValue="$2.4B"
-                exportValue="$0.8B"
-                dependency={68}
-                riskLevel="medium"
-                trend={12.5}
-                color="copper"
-                delay={0}
-              />
-              <MineralCard
-                name="Lithium"
-                symbol="Li"
-                importValue="$1.8B"
-                exportValue="$0.02B"
-                dependency={99}
-                riskLevel="high"
-                trend={45.2}
-                color="lithium"
-                delay={0.1}
-              />
-              <MineralCard
-                name="Graphite"
-                symbol="C"
-                importValue="$0.9B"
-                exportValue="$0.15B"
-                dependency={85}
-                riskLevel="medium"
-                trend={8.3}
-                color="graphite"
-                delay={0.2}
-              />
+              {(focusMinerals || []).map((mineral, index) => (
+                <MineralCard
+                  key={mineral.id}
+                  name={mineral.name}
+                  symbol={mineral.symbol}
+                  importValue={formatBillions(mineral.importValueUSD)}
+                  exportValue={formatBillions(mineral.exportValueUSD)}
+                  dependency={mineral.importDependencyPercent}
+                  riskLevel={asRisk(mineral.riskLevel)}
+                  trend={mineral.trendPercent}
+                  color={asColor(index)}
+                  delay={index * 0.1}
+                />
+              ))}
             </div>
           </motion.div>
 
@@ -131,36 +130,15 @@ const Index = () => {
                 Risk Assessment Index
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3 gap-4">
-                <RiskGauge
-                  mineral="Copper"
-                  score={58}
-                  color="copper"
-                  factors={[
-                    { name: "Import Dependency", value: 68 },
-                    { name: "Supply Concentration", value: 45 },
-                    { name: "Price Volatility", value: 62 },
-                  ]}
-                />
-                <RiskGauge
-                  mineral="Lithium"
-                  score={89}
-                  color="lithium"
-                  factors={[
-                    { name: "Import Dependency", value: 99 },
-                    { name: "Supply Concentration", value: 85 },
-                    { name: "Price Volatility", value: 78 },
-                  ]}
-                />
-                <RiskGauge
-                  mineral="Graphite"
-                  score={72}
-                  color="graphite"
-                  factors={[
-                    { name: "Import Dependency", value: 85 },
-                    { name: "Supply Concentration", value: 65 },
-                    { name: "Price Volatility", value: 55 },
-                  ]}
-                />
+                {(riskGauges || []).map((gauge) => (
+                  <RiskGauge
+                    key={gauge.mineral}
+                    mineral={gauge.mineral}
+                    score={gauge.score}
+                    color={asColor(0)}
+                    factors={gauge.factors}
+                  />
+                ))}
               </div>
             </div>
             <IndiaMapSection />
@@ -186,7 +164,7 @@ const Index = () => {
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <span>Data Source: DGCI&S, Ministry of Commerce</span>
               <span className="hidden md:inline">•</span>
-              <span>Last Updated: Jan 2026</span>
+              <span>Last Updated: {new Date().toLocaleDateString("en-IN", { month: "short", year: "numeric" })}</span>
             </div>
           </div>
         </div>

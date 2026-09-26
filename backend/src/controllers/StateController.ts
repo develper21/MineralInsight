@@ -125,11 +125,11 @@ export class StateController {
             ),
           db('states')
             .join('countries', 'states.country_id', 'countries.id')
-            .join('minerals', db.raw('JSON_EXTRACT(states.mineral_resources, ?) = minerals.name', ['%name%']))
+            .join('minerals', db.raw("JSON_EXTRACT(states.mineral_resources, '$[*]') = minerals.name"))
             .where('states.id', id)
             .select('minerals.*')
             .limit(10),
-          this.getTopCompanies(id)
+          this.getTopCompanies(Number(id))
         ]);
 
         result = {
@@ -322,7 +322,7 @@ export class StateController {
       // Group by frequency if needed
       let groupedData = productionData;
       if (frequency !== 'daily') {
-        groupedData = this.groupProductionByFrequency(productionData, frequency);
+        groupedData = this.groupProductionByFrequency(productionData, String(frequency));
       }
 
       // Calculate production statistics

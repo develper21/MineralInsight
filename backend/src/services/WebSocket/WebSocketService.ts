@@ -177,7 +177,7 @@ export class WebSocketService {
   }
 
   private handleSubscribe(socket: any, data: { channel: string; filters?: any }): void {
-    const clientInfo = this this.clients.get(socket.id);
+    const clientInfo = this.clients.get(socket.id);
     if (!clientInfo) return;
 
     const channel = data.channel;
@@ -192,7 +192,7 @@ export class WebSocketService {
     socket.join(`channel:${channel}`);
 
     // Send confirmation
-    socket.emit('subscribed', { channel, filters });
+    socket.emit('subscribed', { channel, filters: data.filters });
     
     logger.info(`Client ${socket.id} subscribed to ${channel}`);
   }
@@ -295,7 +295,7 @@ export class WebSocketService {
       
       // Cache risk updates
       await cacheSet(`websocket:risk-update:${update.id}`, update, 300);
-    } (error) {
+    } catch (error) {
       logger.error('Error broadcasting risk update:', error);
     }
   }
@@ -306,7 +306,7 @@ export class WebSocketService {
       
       // Cache trade notifications
       await cacheSet(`websocket:trade-notification:${notification.id}`, notification, 300);
-    } (error) {
+    } catch (error) {
       logger.error('Error broadcasting trade notification:', error);
     }
   }

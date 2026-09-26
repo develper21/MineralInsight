@@ -24,18 +24,36 @@ import forecastRoutes from '@/routes/forecast';
 import stateRoutes from '@/routes/states';
 import externalRoutes from '@/routes/external';
 import geospatialRoutes from '@/routes/geospatial';
+import dashboardRoutes from '@/routes/dashboard';
 
-// Load environment variables
+// Load environment variables (.env.local wins over .env)
+dotenv.config({ path: '.env.local' });
 dotenv.config();
+
+// Allowed CORS origins: CORS_ORIGIN can be a comma-separated list
+// (e.g. "http://localhost:5173,http://localhost:3000,https://myapp.netlify.app")
+const getAllowedOrigins = (): string[] => {
+  const defaults = ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:4173'];
+  const configured = (process.env.CORS_ORIGIN || '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  return Array.from(new Set([...defaults, ...configured]));
+};
+
+const allowedOrigins = getAllowedOrigins();
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-    credentials: process.env.CORS_CREDENTIALS === 'true'
+    origin: allowedOrigins,
+    credentials: process.env.CORS_CREDENTIALS !== 'false'
   }
 });
+
+// Trust reverse proxy (Render / Netlify / Nginx) so rate limiting works behind it
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(helmet({
@@ -50,8 +68,14 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-  credentials: process.env.CORS_CREDENTIALS === 'true',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: process.env.CORS_CREDENTIALS !== 'false',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
@@ -86,6 +110,7 @@ app.get('/health', (req, res) => {
 });
 
 // API Routes
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/minerals', mineralRoutes);
 app.use('/api/trade', tradeRoutes);
@@ -148,22 +173,28 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 // Start server
-const PORT = process.env.PORT || 3001;
-const HOST = process.env.HOST || 'localhost';
+// On platforms like Render, PORT is injected and the app must bind 0.0.0.0
+// Guard against PORT=0 / empty values (they'd bind a random OS port)
+const PORT = parseInt(process.env.PORT || '') > 0 ? parseInt(process.env.PORT!) : 3001;
+const HOST = process.env.HOST || '0.0.0.0';
 
 async function startServer() {
   try {
-    // Connect to database
+    // Connect to database (runs migrations in production, optional seeds via RUN_SEEDS=true)
     await connectDatabase();
     logger.info('Database connected successfully');
 
-    // Connect to Redis
-    await connectRedis();
-    logger.info('Redis connected successfully');
+    // Connect to Redis (optional — app keeps working without cache)
+    try {
+      await connectRedis();
+      logger.info('Redis connected successfully');
+    } catch (redisError) {
+      logger.warn('Redis unavailable, continuing without cache:', (redisError as Error).message);
+    }
 
     // Start server
     server.listen(PORT, () => {
-      logger.info(`🚀 Server running on http://${HOST}:${PORT}`);
+      logger.info(`🚀 Server running on ${HOST === '0.0.0.0' ? 'http://localhost' : `http://${HOST}`}:${PORT}`);
       logger.info(`📚 API Documentation: http://${HOST}:${PORT}/api-docs`);
       logger.info(`🔌 WebSocket server ready`);
       logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);

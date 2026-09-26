@@ -317,7 +317,7 @@ export class ForecastController {
       }
 
       if (type !== 'both') {
-        query = query.whereRaw("JSON_EXTRACT(forecasts.metadata, '$.trade_type') = ?", [type]);
+        query = query.whereRaw("JSON_EXTRACT(forecasts.metadata, '$.trade_type') = ?", [String(type)]);
       }
 
       const forecasts = await query;
@@ -548,7 +548,7 @@ export class ForecastController {
         new Date(a.forecast_date).getTime() - new Date(b.forecast_date).getTime()
       );
 
-      const growthRates = [];
+      const growthRates: any[] = [];
       for (let i = 1; i < mineralForecasts.length; i++) {
         const prev = mineralForecasts[i - 1].forecast_value;
         const curr = mineralForecasts[i].forecast_value;
@@ -638,7 +638,7 @@ export class ForecastController {
     };
 
     const baseValue = baseValues[mineral.toLowerCase()]?.[scenario] || 10000;
-    const forecasts = [];
+    const forecasts: any[] = [];
 
     let months = 3;
     switch (period) {

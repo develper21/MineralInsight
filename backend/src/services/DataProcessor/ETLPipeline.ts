@@ -99,12 +99,18 @@ export class ETLPipeline {
   }
 
   private setupCronJobs(): void {
+    // Cron scheduling is opt-in so plain `npm run dev`/`npm start` does not keep
+    // the event loop (and dev tooling) alive after background startup.
+    if (process.env.ENABLE_CRON_JOBS !== 'true') {
+      logger.info('ETL cron jobs disabled (set ENABLE_CRON_JOBS=true to schedule)');
+      return;
+    }
     this.jobs.forEach((job, jobId) => {
       if (job.enabled) {
         cron.schedule(job.schedule, () => {
           this.runJob(jobId);
         });
-        
+
         logger.info(`Scheduled job: ${job.name} (${job.schedule})`);
       }
     });
@@ -224,7 +230,7 @@ export class ETLPipeline {
       const minerals = await db('minerals').where('is_active', true).select('name');
       const commodityNames = minerals.map(m => this.dgciService.mapDGCICommodityToMineral(m.name)).filter(Boolean);
 
-      const tradeData = [];
+      const tradeData: any[] = [];
       for (const commodity of commodityNames) {
         try {
           const data = await this.dgciService.getTradeData(commodity as string, startDate, endDate);
@@ -237,18 +243,24 @@ export class ETLPipeline {
       }
 
       // Transform and insert data
-      const transformedData = tradeData.map(item => ({
-        mineral_id: this.getMineralIdByName(item.commodity),
-        country_id: this.getCountryIdByName(item.metadata?.country),
-        trade_type: item.metadata?.trade_type || 'import',
-        quantity: item.metadata?.quantity || 0,
-        quantity_unit: item.unit,
-        value_usd: item.price * (item.metadata?.quantity || 1),
-        price_per_unit: item.price,
-        trade_date: item.date,
-        source: 'DGCI API',
-        metadata: item.metadata
-      })).filter(item => item.mineral_id && item.country_id);
+      const transformedData: any[] = [];
+      for (const item of tradeData) {
+        const mineral_id = await this.getMineralIdByName(item.commodity);
+        const country_id = await this.getCountryIdByName(item.metadata?.country);
+        if (!mineral_id || !country_id) continue;
+        transformedData.push({
+          mineral_id,
+          country_id,
+          trade_type: item.metadata?.trade_type || 'import',
+          quantity: item.metadata?.quantity || 0,
+          quantity_unit: item.unit,
+          value_usd: item.price * (item.metadata?.quantity || 1),
+          price_per_unit: item.price,
+          trade_date: item.date,
+          source: 'DGCI API',
+          metadata: item.metadata
+        });
+      }
 
       if (transformedData.length > 0) {
         await this.upsertTradeData(transformedData);
@@ -267,7 +279,7 @@ export class ETLPipeline {
       const minerals = await db('minerals').where('is_active', true).select('name');
       const commodityNames = minerals.map(m => this.dgciService.mapDGCICommodityToMineral(m.name)).filter(Boolean);
 
-      const productionData = [];
+      const productionData: any[] = [];
       for (const commodity of commodityNames) {
         try {
           const data = await this.dgciService.getProductionData(commodity as string);
@@ -280,19 +292,24 @@ export class ETLPipeline {
       }
 
       // Transform and insert data
-      const transformedData = productionData.map(item => ({
-        mineral_id: this.getMineralIdByName(item.commodity),
-        state_id: this.getStateIdByName(item.metadata?.state),
-        quantity: item.metadata?.quantity || 0,
-        quantity_unit: item.unit,
-        production_date: item.date,
-        period_type: 'monthly',
-        grade: item.metadata?.grade,
-        mine_name: item.metadata?.mine_name,
-        company: item.metadata?.company,
-        source: 'DGCI API',
-        metadata: item.metadata
-      })).filter(item => item.mineral_id);
+      const transformedData: any[] = [];
+      for (const item of productionData) {
+        const mineral_id = await this.getMineralIdByName(item.commodity);
+        if (!mineral_id) continue;
+        transformedData.push({
+          mineral_id,
+          state_id: await this.getStateIdByName(item.metadata?.state),
+          quantity: item.metadata?.quantity || 0,
+          quantity_unit: item.unit,
+          production_date: item.date,
+          period_type: 'monthly',
+          grade: item.metadata?.grade,
+          mine_name: item.metadata?.mine_name,
+          company: item.metadata?.company,
+          source: 'DGCI API',
+          metadata: item.metadata
+        });
+      }
 
       if (transformedData.length > 0) {
         await this.upsertProductionData(transformedData);
@@ -319,21 +336,27 @@ export class ETLPipeline {
       });
 
       // Transform and insert data
-      const transformedData = result.data.map(item => ({
-        mineral_id: this.getMineralIdByName(item.commodity),
-        country_id: this.getCountryIdByName(item.country),
-        trade_type: item.trade_type,
-        quantity: item.quantity,
-        quantity_unit: item.unit,
-        value_usd: item.value_usd,
-        price_per_unit: item.value_usd / item.quantity,
-        trade_date: item.date,
-        source: 'Commerce API',
-        metadata: {
-          hs_code: item.hs_code,
-          original_data: item.metadata
-        }
-      })).filter(item => item.mineral_id && item.country_id);
+      const transformedData: any[] = [];
+      for (const item of result.data) {
+        const mineral_id = await this.getMineralIdByName(item.commodity);
+        const country_id = await this.getCountryIdByName(item.country);
+        if (!mineral_id || !country_id) continue;
+        transformedData.push({
+          mineral_id,
+          country_id,
+          trade_type: item.trade_type,
+          quantity: item.quantity,
+          quantity_unit: item.unit,
+          value_usd: item.value_usd,
+          price_per_unit: item.value_usd / item.quantity,
+          trade_date: item.date,
+          source: 'Commerce API',
+          metadata: {
+            hs_code: item.hs_code,
+            original_data: item.metadata
+          }
+        });
+      }
 
       if (transformedData.length > 0) {
         await this.upsertTradeData(transformedData);
@@ -352,7 +375,7 @@ export class ETLPipeline {
       const states = await db('states').where('is_active', true).select('name');
       const minerals = await db('minerals').where('is_active', true).select('name');
 
-      const productionData = [];
+      const productionData: any[] = [];
       for (const state of states) {
         for (const mineral of minerals) {
           try {
@@ -371,23 +394,29 @@ export class ETLPipeline {
       }
 
       // Transform and insert data
-      const transformedData = productionData.map(item => ({
-        mineral_id: this.getMineralIdByName(item.mineral),
-        state_id: this.getStateIdByName(item.state),
-        quantity: item.production,
-        quantity_unit: 'metric_tons',
-        production_date: item.last_updated.split('T')[0],
-        period_type: 'monthly',
-        grade: item.grade,
-        mine_name: item.company,
-        company: item.company,
-        source: 'TEXMiN API',
-        metadata: {
-          district: item.district,
-          coordinates: item.coordinates,
-          original_data: item.metadata
-        }
-      })).filter(item => item.mineral_id && item.state_id);
+      const transformedData: any[] = [];
+      for (const item of productionData) {
+        const mineral_id = await this.getMineralIdByName(item.mineral);
+        const state_id = await this.getStateIdByName(item.state);
+        if (!mineral_id || !state_id) continue;
+        transformedData.push({
+          mineral_id,
+          state_id,
+          quantity: item.production,
+          quantity_unit: 'metric_tons',
+          production_date: item.last_updated.split('T')[0],
+          period_type: 'monthly',
+          grade: item.grade,
+          mine_name: item.company,
+          company: item.company,
+          source: 'TEXMiN API',
+          metadata: {
+            district: item.district,
+            coordinates: item.coordinates,
+            original_data: item.metadata
+          }
+        });
+      }
 
       if (transformedData.length > 0) {
         await this.upsertProductionData(transformedData);
@@ -405,7 +434,7 @@ export class ETLPipeline {
     try {
       const minerals = await db('minerals').where('is_active', true).select('name');
 
-      const reservesData = [];
+      const reservesData: any[] = [];
       for (const mineral of minerals) {
         try {
           const data = await this.texminService.getMineralReserves(mineral.name);

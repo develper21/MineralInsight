@@ -1,54 +1,55 @@
 import { motion } from "framer-motion";
 import { AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTopPartners, type TopPartner } from "@/hooks/useDashboard";
 
-const partnerData = [
+const fallbackData: TopPartner[] = [
   { 
     country: "China", 
     flag: "🇨🇳", 
-    share: 42.5, 
-    value: 3.4, 
-    trend: 15.2, 
-    risk: "high" as const,
+    sharePercent: 42.5, 
+    valueUSD: 3400000000, 
+    riskLevel: "high",
     minerals: ["Lithium", "Graphite", "REE"]
   },
   { 
     country: "Australia", 
     flag: "🇦🇺", 
-    share: 18.3, 
-    value: 1.47, 
-    trend: 8.5, 
-    risk: "low" as const,
+    sharePercent: 18.3, 
+    valueUSD: 1470000000, 
+    riskLevel: "low",
     minerals: ["Lithium", "Copper"]
   },
   { 
     country: "Chile", 
     flag: "🇨🇱", 
-    share: 12.7, 
-    value: 1.02, 
-    trend: -2.3, 
-    risk: "low" as const,
+    sharePercent: 12.7, 
+    valueUSD: 1020000000, 
+    riskLevel: "low",
     minerals: ["Copper", "Lithium"]
   },
   { 
     country: "Indonesia", 
     flag: "🇮🇩", 
-    share: 9.8, 
-    value: 0.79, 
-    trend: 22.1, 
-    risk: "medium" as const,
+    sharePercent: 9.8, 
+    valueUSD: 790000000, 
+    riskLevel: "medium",
     minerals: ["Nickel", "Copper"]
   },
   { 
     country: "South Africa", 
     flag: "🇿🇦", 
-    share: 6.2, 
-    value: 0.5, 
-    trend: -5.4, 
-    risk: "medium" as const,
+    sharePercent: 6.2, 
+    valueUSD: 500000000, 
+    riskLevel: "medium",
     minerals: ["PGE", "Manganese"]
   },
 ];
+
+const flagEmoji = (code: string): string =>
+  code
+    .toUpperCase()
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
 
 const riskColors = {
   high: "text-risk-high bg-risk-high/10 border-risk-high/30",
@@ -57,6 +58,10 @@ const riskColors = {
 };
 
 export function CountryTable() {
+  const { data } = useTopPartners(5);
+  const partnerData: TopPartner[] =
+    data && data.length > 0 ? data : fallbackData;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -78,81 +83,77 @@ export function CountryTable() {
           <thead>
             <tr>
               <th>Country</th>
-              <th>Share</th>
-              <th>Value (USD B)</th>
-              <th>YoY Change</th>
-              <th>Risk Level</th>
+              <th>Import Share</th>
+              <th>Value (USD)</th>
               <th>Key Minerals</th>
+              <th>Risk Level</th>
             </tr>
           </thead>
           <tbody>
-            {partnerData.map((partner, index) => (
-              <motion.tr
-                key={partner.country}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 * index }}
-              >
-                <td>
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{partner.flag}</span>
-                    <span className="font-medium text-foreground">
-                      {partner.country}
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-2 rounded-full bg-secondary overflow-hidden">
-                      <div 
-                        className="h-full rounded-full bg-primary"
-                        style={{ width: `${partner.share}%` }}
-                      />
-                    </div>
-                    <span className="font-medium">{partner.share}%</span>
-                  </div>
-                </td>
-                <td className="font-display font-semibold">
-                  ${partner.value}B
-                </td>
-                <td>
-                  <div className="flex items-center gap-1.5">
-                    {partner.trend > 0 ? (
-                      <TrendingUp className="w-4 h-4 text-success" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-destructive" />
-                    )}
-                    <span className={cn(
-                      "font-medium",
-                      partner.trend > 0 ? "text-success" : "text-destructive"
-                    )}>
-                      {partner.trend > 0 ? "+" : ""}{partner.trend}%
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <span className={cn(
-                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
-                    riskColors[partner.risk]
-                  )}>
-                    <AlertTriangle className="w-3 h-3" />
-                    {partner.risk.charAt(0).toUpperCase() + partner.risk.slice(1)}
-                  </span>
-                </td>
-                <td>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {partner.minerals.map((mineral) => (
-                      <span 
-                        key={mineral}
-                        className="px-2 py-0.5 rounded text-xs bg-secondary text-muted-foreground"
-                      >
-                        {mineral}
+            {partnerData.map((partner, index) => {
+              const risk = (partner.riskLevel || "medium") as keyof typeof riskColors;
+              return (
+                <motion.tr
+                  key={`${partner.country}-${index}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.4, delay: 0.4 + index * 0.05 }}
+                >
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xl">
+                        {partner.flag && partner.flag.length <= 2
+                          ? partner.flag
+                          : flagEmoji(partner.flag || "")}
                       </span>
-                    ))}
-                  </div>
-                </td>
-              </motion.tr>
-            ))}
+                      <span className="font-medium text-foreground">
+                        {partner.country}
+                      </span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-2 rounded-full bg-secondary overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${partner.sharePercent}%` }}
+                          transition={{ duration: 0.8, delay: 0.5 }}
+                          className="h-full rounded-full bg-primary"
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {partner.sharePercent.toFixed(1)}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="font-medium text-foreground">
+                    ${(partner.valueUSD / 1_000_000_000).toFixed(2)}B
+                  </td>
+                  <td>
+                    <div className="flex flex-wrap gap-1">
+                      {(partner.minerals || []).map((mineral) => (
+                        <span
+                          key={mineral}
+                          className="px-2 py-0.5 rounded-full text-xs bg-secondary text-muted-foreground"
+                        >
+                          {mineral}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-medium border",
+                        riskColors[risk]
+                      )}
+                    >
+                      {risk.toUpperCase()}
+                    </span>
+                  </td>
+                </motion.tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

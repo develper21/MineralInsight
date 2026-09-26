@@ -5,15 +5,17 @@ let redisClient: RedisClientType;
 
 export const connectRedis = async (): Promise<RedisClientType> => {
   try {
-    const redisConfig: any = {
-      socket: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-      },
-      database: parseInt(process.env.REDIS_DB || '0'),
-    };
+    const redisConfig: any = process.env.REDIS_URL
+      ? { url: process.env.REDIS_URL }
+      : {
+          socket: {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: parseInt(process.env.REDIS_PORT || '6379'),
+          },
+          database: parseInt(process.env.REDIS_DB || '0'),
+        };
 
-    if (process.env.REDIS_PASSWORD) {
+    if (!process.env.REDIS_URL && process.env.REDIS_PASSWORD) {
       redisConfig.password = process.env.REDIS_PASSWORD;
     }
 
@@ -62,10 +64,10 @@ export const getRedisClient = (): RedisClientType => {
   return redisClient;
 };
 
-// Cache helper functions
+// Cache helper functions — all fail soft so the API works without Redis
 export const cacheSet = async (
-  key: string, 
-  value: any, 
+  key: string,
+  value: any,
   ttl: number = parseInt(process.env.CACHE_TTL || '3600')
 ): Promise<void> => {
   try {
@@ -73,11 +75,11 @@ export const cacheSet = async (
     await client.setEx(key, ttl, JSON.stringify(value));
     logger.debug(`Cache set for key: ${key}`);
   } catch (error) {
-    logger.error(`Error setting cache for key ${key}:`, error);
+    logger.debug(`Cache unavailable, skipping set for key ${key}`);
   }
 };
 
-export const cacheGet = async <T>(key: string): Promise<T | null> => {
+export const cacheGet = async <T = any>(key: string): Promise<T | null> => {
   try {
     const client = getRedisClient();
     const value = await client.get(key);
@@ -88,7 +90,6 @@ export const cacheGet = async <T>(key: string): Promise<T | null> => {
     logger.debug(`Cache miss for key: ${key}`);
     return null;
   } catch (error) {
-    logger.error(`Error getting cache for key ${key}:`, error);
     return null;
   }
 };
@@ -99,7 +100,7 @@ export const cacheDel = async (key: string): Promise<void> => {
     await client.del(key);
     logger.debug(`Cache deleted for key: ${key}`);
   } catch (error) {
-    logger.error(`Error deleting cache for key ${key}:`, error);
+    logger.debug(`Cache unavailable, skipping delete for key ${key}`);
   }
 };
 
@@ -109,7 +110,6 @@ export const cacheExists = async (key: string): Promise<boolean> => {
     const exists = await client.exists(key);
     return exists === 1;
   } catch (error) {
-    logger.error(`Error checking cache existence for key ${key}:`, error);
     return false;
   }
 };
@@ -120,6 +120,6 @@ export const cacheFlush = async (): Promise<void> => {
     await client.flushDb();
     logger.info('Cache flushed');
   } catch (error) {
-    logger.error('Error flushing cache:', error);
+    logger.debug('Cache unavailable, skipping flush');
   }
 };
