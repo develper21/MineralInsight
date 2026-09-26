@@ -28,7 +28,7 @@ services:
     plan: free
     region: singapore # closest to India on Render free tier
     rootDir: backend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start
     healthCheckPath: /health
     autoDeploy: true # redeploys on every push to main
