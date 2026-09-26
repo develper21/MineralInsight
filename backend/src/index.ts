@@ -9,8 +9,10 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 import { logger } from '@/utils/logger';
+import '@/config/env'; // load .env.production / .env.local before anything reads process.env
 import { connectDatabase } from '@/config/database';
 import { connectRedis } from '@/config/redis';
+import { db } from '@/config/database';
 import { errorHandler } from '@/middleware/errorHandler';
 import { notFoundHandler } from '@/middleware/notFoundHandler';
 
@@ -26,8 +28,8 @@ import externalRoutes from '@/routes/external';
 import geospatialRoutes from '@/routes/geospatial';
 import dashboardRoutes from '@/routes/dashboard';
 
-// Load environment variables (.env.local wins over .env)
-dotenv.config({ path: '.env.local' });
+// Load environment variables — centralized loader (env.ts already ran via import)
+dotenv.config({ path: process.env.NODE_ENV === 'production' ? '.env.production' : '.env.local' });
 dotenv.config();
 
 // Allowed CORS origins: CORS_ORIGIN can be a comma-separated list
@@ -98,10 +100,18 @@ const limiter = rateLimit({
 
 app.use('/api/', limiter);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'OK',
+// Health check endpoint — reports DB status (503 when DB is down)
+let dbHealthy = false;
+app.get('/health', async (req, res) => {
+  try {
+    await db.raw('SELECT 1');
+    dbHealthy = true;
+  } catch {
+    dbHealthy = false;
+  }
+  res.status(dbHealthy ? 200 : 503).json({
+    status: dbHealthy ? 'OK' : 'DEGRADED',
+    database: dbHealthy ? 'up' : 'down',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     environment: process.env.NODE_ENV,
@@ -179,31 +189,26 @@ const PORT = parseInt(process.env.PORT || '') > 0 ? parseInt(process.env.PORT!) 
 const HOST = process.env.HOST || '0.0.0.0';
 
 async function startServer() {
+  // Bind the port FIRST so the platform (Render) always detects an open port
+  // and logs stay observable. Health endpoint reports real DB status.
+  server.listen(PORT, () => {
+    logger.info(`🚀 Server running on ${HOST === '0.0.0.0' ? 'http://localhost' : `http://${HOST}`}:${PORT}`);
+    logger.info(`🔌 WebSocket server ready`);
+    logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
+  });
+
+  // Database — if it fails, run in degraded mode (recovers automatically
+  // when the DB becomes reachable; /health then flips back to OK)
   try {
-    // Connect to database (runs migrations in production, optional seeds via RUN_SEEDS=true)
     await connectDatabase();
     logger.info('Database connected successfully');
-
-    // Connect to Redis (optional — app keeps working without cache)
-    try {
-      await connectRedis();
-      logger.info('Redis connected successfully');
-    } catch (redisError) {
-      logger.warn('Redis unavailable, continuing without cache:', (redisError as Error).message);
-    }
-
-    // Start server
-    server.listen(PORT, () => {
-      logger.info(`🚀 Server running on ${HOST === '0.0.0.0' ? 'http://localhost' : `http://${HOST}`}:${PORT}`);
-      logger.info(`📚 API Documentation: http://${HOST}:${PORT}/api-docs`);
-      logger.info(`🔌 WebSocket server ready`);
-      logger.info(`🌍 Environment: ${process.env.NODE_ENV}`);
-    });
-
-  } catch (error) {
-    logger.error('Failed to start server:', error);
-    process.exit(1);
+  } catch (dbError) {
+    logger.error('Database unavailable — running in DEGRADED mode:', (dbError as Error).message);
+    logger.error('Set DATABASE_URL correctly; the app will recover automatically once the DB is reachable');
   }
+
+  // Redis — fully optional, never blocks or spams
+  await connectRedis();
 }
 
 // Graceful shutdown

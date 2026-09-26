@@ -4,9 +4,7 @@
  *
  * Usage: npx tsx src/scripts/run-migrations.ts
  */
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
-dotenv.config();
+import '../config/env'; // centralized env loading
 
 import knex from 'knex';
 

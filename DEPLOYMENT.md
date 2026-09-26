@@ -12,11 +12,24 @@ Backend → **Render** · Frontend → **Netlify**
 
 1. Push this repo to GitHub.
 2. Render Dashboard → **New → Blueprint** → select the repo → Apply.
-   - Creates: `mineralinsight-api` (web service), `mineralinsight-db` (PostgreSQL), `mineralinsight-redis` (cache).
-3. After first deploy, open the web service → **Environment** → set:
-   - `CORS_ORIGIN` = `https://<your-site>.netlify.app` (comma-separate multiple URLs)
-   - `RUN_SEEDS` = `true` for **one** deploy (loads all seed data), then set back to `false`.
-4. Verify: `https://mineralinsight-api.onrender.com/health` → `{"status":"OK",...}`
+   - Creates: `mineralinsight-api` (web service) + `mineralinsight-db` (PostgreSQL).
+3. **Set `DATABASE_URL`** in the web service → Environment:
+   - Paste the connection string from your `.env.production` file
+     (Neon/Render/any Postgres — `.env.production` itself is gitignored,
+     so the value must be entered in the Render dashboard).
+4. Also set `CORS_ORIGIN` = `https://<your-site>.netlify.app` (comma-separated for multiple).
+5. Verify: `https://mineralinsight-api.onrender.com/health` → `{"status":"OK","database":"up"}`
+
+### What happens automatically on boot (production)
+
+- **Migrations** run on every deploy (`RUN_MIGRATIONS=true`) — schema always up to date.
+- **Seeds** auto-load on **first boot only** (when the DB is empty). Once data exists,
+  later deploys never reseed. To force a reseed: set `RUN_SEEDS=true`, redeploy, then set it back to `false`.
+- **Redis is optional** — without `REDIS_URL` the API runs normally with no cache
+  (no retry spam; add a Render Redis later and set `REDIS_URL` to enable).
+- **Port binds immediately** — even if the DB is unreachable at boot, the service
+  starts in `DEGRADED` mode and recovers automatically once the DB responds
+  (`/health` shows `database: down` → `up`).
 
 ### Option B — Manual web service
 
@@ -31,12 +44,11 @@ Environment variables:
 
 ```
 NODE_ENV=production
-DATABASE_URL=<from Render PostgreSQL "Internal Database URL">
-REDIS_URL=<from Render Redis "Internal Connection String">   # optional
+DATABASE_URL=<paste from your .env.production — Neon/Render Postgres URL>
 JWT_SECRET=<generate a strong secret>
 CORS_ORIGIN=https://<your-site>.netlify.app
 RUN_MIGRATIONS=true
-RUN_SEEDS=true        # once, to seed, then false
+RUN_SEEDS=false       # auto-seeds only when DB is empty; true forces reseed
 RATE_LIMIT_MAX_REQUESTS=300
 ```
 
@@ -120,9 +132,10 @@ Import steps:
 
 ## 4. Deploy checklist
 
-- [ ] Render blueprint applied, `/health` returns OK
+- [ ] Render blueprint applied, `/health` returns `"status":"OK","database":"up"`
+- [ ] `DATABASE_URL` set in Render dashboard (from `.env.production`)
 - [ ] `CORS_ORIGIN` on Render includes the Netlify URL
 - [ ] `VITE_API_BASE_URL` on Netlify points to the Render `/api` URL
-- [ ] Seeds loaded once (`RUN_SEEDS=true` → redeploy → `false`)
+- [ ] Seed data visible: `GET /api/dashboard/summary` returns real numbers
 - [ ] Postman: run Login + Dashboard/Summary against the **deployed** URL
 - [ ] Frontend dashboard shows live numbers (not "…")

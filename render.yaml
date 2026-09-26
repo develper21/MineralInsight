@@ -1,11 +1,17 @@
 # Render Blueprint — MineralInsight Backend
-# Deploy via Render Dashboard: New > Blueprint > point to this repo,
-# or CLI: render blueprint launch
+# Deploy via Render Dashboard: New > Blueprint > point to this repo
 #
 # Provisioned services:
-#   - Web Service (this backend, Docker-free Node build)
-#   - Render PostgreSQL (DATABASE_URL injected automatically)
-#   - Render Key Value / Redis (REDIS_URL injected automatically)
+#   - Web Service (this backend)
+#   - Render PostgreSQL (optional — see note)
+#
+# DATABASE_URL:
+#   Set it in the Render Dashboard (Environment > Environment Variables) using
+#   the connection string from your .env.production file (Neon/Render/etc).
+#   If you use the Render Postgres below instead, keep the fromDatabase block.
+#
+# Redis is OPTIONAL — the API runs fully without it (cache is fail-soft).
+# To enable later, uncomment the redis block and the REDIS_URL env var.
 
 databases:
   - name: mineralinsight-db
@@ -15,38 +21,41 @@ databases:
     postgresMajorVersion: "16"
 
 services:
-  # Optional Redis for caching — delete this block if you skip caching
-  - type: redis
-    name: mineralinsight-redis
-    plan: free
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList: [] # allow all (Render internal network only)
+  # Optional cache — uncomment to enable (then also uncomment REDIS_URL below)
+  # - type: redis
+  #   name: mineralinsight-redis
+  #   plan: free
+  #   maxmemoryPolicy: allkeys-lru
+  #   ipAllowList: []
 
   - type: web
     name: mineralinsight-api
     runtime: node
     plan: free
-    region: singapore # closest to India on Render free tier
+    region: singapore
     rootDir: backend
     buildCommand: npm install --include=dev && npm run build
     startCommand: npm run start
     healthCheckPath: /health
-    autoDeploy: true # redeploys on every push to main
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: "20"
-      # DATABASE_URL and REDIS_URL are auto-injected from the services above
+      # >>> OPTION A (recommended): put your existing DB (from .env.production) here
+      #     in the Render Dashboard as DATABASE_URL — it overrides everything.
+      #
+      # >>> OPTION B: use the Render Postgres provisioned above:
       - key: DATABASE_URL
         fromDatabase:
           name: mineralinsight-db
           property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: mineralinsight-redis
-          property: connectionString
+      # - key: REDIS_URL
+      #   fromService:
+      #     type: redis
+      #     name: mineralinsight-redis
+      #     property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -54,7 +63,7 @@ services:
       - key: JWT_REFRESH_EXPIRES_IN
         value: 30d
       - key: CORS_ORIGIN
-        sync: false # set to your Netlify URL, e.g. https://mineralinsight.netlify.app
+        sync: false # set to your Netlify URL(s), comma-separated
       - key: CORS_CREDENTIALS
         value: "true"
       - key: RATE_LIMIT_WINDOW_MS
@@ -62,9 +71,11 @@ services:
       - key: RATE_LIMIT_MAX_REQUESTS
         value: "300"
       - key: RUN_MIGRATIONS
-        value: "true" # runs knex migrations on boot
+        value: "true"      # schema auto-applies on every boot
       - key: RUN_SEEDS
-        value: "false" # set to true once to load seed data, then back to false
+        value: "false"     # first boot auto-seeds if DB is empty; set true to force reseed
+      - key: ENABLE_CRON_JOBS
+        value: "false"
       - key: ENABLE_SWAGGER
         value: "false"
       - key: LOG_LEVEL
