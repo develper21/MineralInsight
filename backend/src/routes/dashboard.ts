@@ -44,7 +44,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const fy = (req.query.fy as string) || '2023-24';
     const { start, end } = financialYearRange(fy);
-    const cacheKey = `dashboard:summary:${fy}`;
+    const cacheKey = `dashboard:v2:summary:${fy}`;
     const cached = await cacheGet(cacheKey);
     if (cached) {
       res.json({ success: true, data: cached });
@@ -165,20 +165,17 @@ router.get(
           .where('trade_type', 'export')
           .whereBetween('trade_date', [fyStart, fyEnd])
           .sum('value_usd as total');
-        const [productionRow] = await db('production_data')
-          .where('mineral_id', mineral.id)
-          .whereBetween('production_date', [yearAgo, now])
-          .sum('quantity as total');
         const latestRisk = await db('risk_assessments')
           .where('mineral_id', mineral.id)
           .orderBy('assessment_date', 'desc')
           .first();
 
         const importValue = Number(importRow?.total || 0);
-        const production = Number(productionRow?.total || 0);
+        const exportValue = Number(exportRow?.total || 0);
+        // Import dependency = imports as a share of total trade in that mineral
         const dependency =
-          importValue > 0
-            ? Math.min(100, Math.round((importValue / (importValue + production * Number(mineral.current_price || 1))) * 100))
+          importValue + exportValue > 0
+            ? Math.min(100, Math.round((importValue / (importValue + exportValue)) * 100))
             : 0;
 
         // Trend: average monthly price change over the last 12 price records
@@ -198,7 +195,7 @@ router.get(
           symbol: mineral.symbol,
           color: (mineral.color_code || '#6C5CE7') as string,
           importValueUSD: importValue,
-          exportValueUSD: Number(exportRow?.total || 0),
+          exportValueUSD: exportValue,
           importDependencyPercent: dependency,
           riskLevel: latestRisk?.risk_level || 'low',
           trendPercent: Number(trendRow?.avg_change || 0),
@@ -341,7 +338,7 @@ router.get(
   validateRequest,
   optionalAuth,
   asyncHandler(async (_req: Request, res: Response) => {
-    const cacheKey = 'dashboard:india-map';
+    const cacheKey = 'dashboard:v2:india-map';
     const cached = await cacheGet(cacheKey);
     if (cached) {
       res.json({ success: true, data: cached });
